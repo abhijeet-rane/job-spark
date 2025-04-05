@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const RegisterForm = () => {
   const navigate = useNavigate();
@@ -40,22 +41,26 @@ const RegisterForm = () => {
 
     setIsLoading(true);
 
-    // In a real app, this would be an API call
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // For now, just redirect to dashboard
-      localStorage.setItem("user", JSON.stringify({
-        name: formData.name,
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
-        role: formData.role,
-      }));
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            role: formData.role
+          }
+        }
+      });
       
-      toast.success("Registration successful!");
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Registration successful! Check your email to confirm your account.");
       navigate("/dashboard");
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+    } catch (error: any) {
+      toast.error("Registration failed: " + error.message);
     } finally {
       setIsLoading(false);
     }

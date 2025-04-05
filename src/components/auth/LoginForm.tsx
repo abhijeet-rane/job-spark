@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -32,21 +33,20 @@ const LoginForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // In a real app, this would be an API call
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // For now, just redirect to dashboard
-      localStorage.setItem("user", JSON.stringify({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        role: formData.role,
-      }));
+        password: formData.password,
+      });
+      
+      if (error) {
+        throw error;
+      }
       
       toast.success("Login successful!");
       navigate("/dashboard");
-    } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+    } catch (error: any) {
+      toast.error("Login failed: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -95,18 +95,6 @@ const LoginForm = () => {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select onValueChange={handleRoleChange} defaultValue={formData.role}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="applicant">Applicant</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <Button
             type="submit"

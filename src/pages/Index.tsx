@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,26 +14,31 @@ import {
   CheckCircle2,
   ArrowRight
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Index = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check if user prefers dark mode
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
-  };
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      <div className="bg-background border-b border-border py-4 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-row justify-between items-center">
+          <div className="text-2xl font-bold">
+            <span className="text-jobspark-primary">Job</span>
+            <span className="text-jobspark-accent">Spark</span>
+          </div>
+          <div className="flex gap-4 items-center">
+            <ThemeToggle />
+            <Link to="/auth">
+              <Button variant="outline">Log In</Button>
+            </Link>
+            <Link to="/auth?register=true">
+              <Button>Sign Up</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
       
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-background to-muted py-20 px-4 sm:px-6 lg:px-8 text-center">
