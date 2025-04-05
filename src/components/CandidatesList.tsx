@@ -6,14 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Search, Filter, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
-type Resume = {
-  id: string;
-  skills: string[] | null;
-  education: any[] | null;
-  experience: any[] | null;
-  created_at: string;
-  profiles: {
+type Resume = Database['public']['Tables']['resumes']['Row'] & {
+  profiles?: {
     full_name: string | null;
   } | null;
 };
@@ -53,6 +49,11 @@ const CandidatesList = () => {
             education: [{ degree: "Bachelor's", field: "Computer Science", institution: "MIT" }],
             experience: [{ title: "Software Engineer", company: "Google" }],
             created_at: new Date().toISOString(),
+            file_name: "resume.pdf",
+            file_path: "path/to/file",
+            file_type: "application/pdf",
+            user_id: "user1",
+            updated_at: new Date().toISOString(),
             profiles: { full_name: "John Doe" }
           },
           {
@@ -61,6 +62,11 @@ const CandidatesList = () => {
             education: [{ degree: "Master's", field: "Data Science", institution: "Stanford" }],
             experience: [{ title: "Data Scientist", company: "Amazon" }],
             created_at: new Date().toISOString(),
+            file_name: "resume2.pdf",
+            file_path: "path/to/file2",
+            file_type: "application/pdf",
+            user_id: "user2",
+            updated_at: new Date().toISOString(),
             profiles: { full_name: "Jane Smith" }
           },
           {
@@ -69,6 +75,11 @@ const CandidatesList = () => {
             education: [{ degree: "Bachelor's", field: "Mobile Development", institution: "Berkeley" }],
             experience: [{ title: "iOS Developer", company: "Apple" }],
             created_at: new Date().toISOString(),
+            file_name: "resume3.pdf",
+            file_path: "path/to/file3",
+            file_type: "application/pdf",
+            user_id: "user3",
+            updated_at: new Date().toISOString(),
             profiles: { full_name: "Mike Johnson" }
           },
         ]);

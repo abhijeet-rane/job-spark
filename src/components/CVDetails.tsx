@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -14,15 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Mail, Calendar, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
-type Resume = {
-  id: string;
-  file_path: string;
-  file_name: string;
-  education: any[] | null;
-  experience: any[] | null;
-  skills: string[] | null;
-  certifications: string[] | null;
+type Resume = Database['public']['Tables']['resumes']['Row'] & {
   profiles?: {
     full_name: string | null;
     id: string;
@@ -111,8 +104,7 @@ const CVDetails = () => {
     );
   }
 
-  // Sample data or actual data from the resume
-  const candidateData = {
+  const candidateData = resume ? {
     name: resume.profiles?.full_name || "Candidate",
     education: resume.education || [
       {
@@ -144,7 +136,7 @@ const CVDetails = () => {
     ],
     skills: resume.skills || ["JavaScript", "React", "Node.js", "Python", "Machine Learning", "SQL", "AWS"],
     certifications: resume.certifications || ["AWS Certified Developer", "Google Cloud Professional"],
-  };
+  } : null;
 
   return (
     <div className="space-y-6">

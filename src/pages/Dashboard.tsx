@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Routes, Route, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,17 +14,9 @@ import CandidatesList from "@/components/CandidatesList";
 import Analytics from "@/components/Analytics";
 import JobPostings from "@/components/JobPostings";
 import JobMatches from "@/components/JobMatches";
+import { Database } from "@/integrations/supabase/types";
 
-type Resume = {
-  id: string;
-  file_path: string;
-  file_name: string;
-  file_type: string;
-  education: any[] | null;
-  experience: any[] | null;
-  skills: string[] | null;
-  certifications: string[] | null;
-  created_at: string;
+type Resume = Database['public']['Tables']['resumes']['Row'] & {
   profiles?: {
     full_name: string | null;
   } | null;
