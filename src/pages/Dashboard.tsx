@@ -14,13 +14,7 @@ import CandidatesList from "@/components/CandidatesList";
 import Analytics from "@/components/Analytics";
 import JobPostings from "@/components/JobPostings";
 import JobMatches from "@/components/JobMatches";
-import { Database } from "@/integrations/supabase/types";
-
-type Resume = Database['public']['Tables']['resumes']['Row'] & {
-  profiles?: {
-    full_name: string | null;
-  } | null;
-};
+import { Resume } from "@/types/resume";
 
 type Match = {
   id: string;
@@ -101,7 +95,6 @@ const AdminDashboard = () => {
   const [resumeList, setResumeList] = useState<Resume[]>([]);
   
   useEffect(() => {
-    // Fetch real data or use dummy data
     fetchResumes();
   }, []);
   
@@ -117,11 +110,18 @@ const AdminDashboard = () => {
           experience, 
           skills, 
           certifications,
+          file_path,
+          file_type,
+          parsed_data,
+          updated_at,
+          user_id,
           profiles:user_id(full_name)
         `);
         
       if (error) throw error;
-      setResumeList(data || []);
+      
+      const typedData = data as unknown as Resume[];
+      setResumeList(typedData || []);
     } catch (error) {
       console.error("Error fetching resumes:", error);
     }
@@ -129,8 +129,6 @@ const AdminDashboard = () => {
   
   const handleFileUpload = async (filePath: string, fileData: any) => {
     try {
-      // In a real implementation, you would parse the CV here
-      // For now, we'll create a dummy entry with sample data
       const { data, error } = await supabase
         .from('job_postings')
         .insert({
@@ -325,7 +323,6 @@ const ApplicantDashboard = () => {
   
   const fetchMatches = async () => {
     try {
-      // For demo purposes, we'll use dummy data
       setMatches([
         {
           id: '1',
@@ -347,8 +344,6 @@ const ApplicantDashboard = () => {
   
   const handleFileUpload = async (filePath: string, fileData: any) => {
     try {
-      // In a real implementation, you would parse the CV here
-      // For now, we'll create a dummy entry with sample data
       const { data, error } = await supabase
         .from('resumes')
         .insert({

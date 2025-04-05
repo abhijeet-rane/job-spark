@@ -13,14 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Mail, Calendar, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
-
-type Resume = Database['public']['Tables']['resumes']['Row'] & {
-  profiles?: {
-    full_name: string | null;
-    id: string;
-  } | null;
-};
+import { Resume, Education, Experience } from "@/types/resume";
 
 const CVDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,7 +43,9 @@ const CVDetails = () => {
         .single();
 
       if (error) throw error;
-      setResume(data);
+      
+      // Type assertion to ensure it matches our Resume type
+      setResume(data as unknown as Resume);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -104,39 +99,45 @@ const CVDetails = () => {
     );
   }
 
-  const candidateData = resume ? {
-    name: resume.profiles?.full_name || "Candidate",
-    education: resume.education || [
-      {
-        degree: "Bachelor of Science",
-        field: "Computer Science",
-        institution: "MIT",
-        year: "2018-2022",
-      },
-      {
-        degree: "Master of Science",
-        field: "Artificial Intelligence",
-        institution: "Stanford University",
-        year: "2022-2023",
-      },
-    ],
-    experience: resume.experience || [
-      {
-        title: "Software Engineer",
-        company: "Google",
-        duration: "2023-Present",
-        description: "Developing machine learning models for search optimization.",
-      },
-      {
-        title: "Junior Developer",
-        company: "Microsoft",
-        duration: "2022-2023",
-        description: "Worked on Azure cloud services and .NET applications.",
-      },
-    ],
-    skills: resume.skills || ["JavaScript", "React", "Node.js", "Python", "Machine Learning", "SQL", "AWS"],
-    certifications: resume.certifications || ["AWS Certified Developer", "Google Cloud Professional"],
-  } : null;
+  // Safely convert the education and experience fields to their proper types
+  const educationData: Education[] = Array.isArray(resume.education) 
+    ? resume.education as unknown as Education[] 
+    : [
+        {
+          degree: "Bachelor of Science",
+          field: "Computer Science",
+          institution: "MIT",
+          year: "2018-2022",
+        },
+        {
+          degree: "Master of Science",
+          field: "Artificial Intelligence",
+          institution: "Stanford University",
+          year: "2022-2023",
+        },
+      ];
+
+  const experienceData: Experience[] = Array.isArray(resume.experience) 
+    ? resume.experience as unknown as Experience[] 
+    : [
+        {
+          title: "Software Engineer",
+          company: "Google",
+          duration: "2023-Present",
+          description: "Developing machine learning models for search optimization.",
+        },
+        {
+          title: "Junior Developer",
+          company: "Microsoft",
+          duration: "2022-2023",
+          description: "Worked on Azure cloud services and .NET applications.",
+        },
+      ];
+
+  const skills = Array.isArray(resume.skills) ? resume.skills : ["JavaScript", "React", "Node.js", "Python", "Machine Learning", "SQL", "AWS"];
+  const certifications = Array.isArray(resume.certifications) ? resume.certifications : ["AWS Certified Developer", "Google Cloud Professional"];
+      
+  const candidateName = resume.profiles?.full_name || "Candidate";
 
   return (
     <div className="space-y-6">
@@ -147,7 +148,7 @@ const CVDetails = () => {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">{candidateData.name}</h1>
+          <h1 className="text-3xl font-bold">{candidateName}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={downloadCV}>
@@ -178,7 +179,7 @@ const CVDetails = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Top Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {candidateData.skills.slice(0, 5).map((skill, index) => (
+                    {skills.slice(0, 5).map((skill, index) => (
                       <Badge key={index} variant="secondary">
                         {skill}
                       </Badge>
@@ -188,27 +189,27 @@ const CVDetails = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Latest Education</h3>
                   <p className="text-sm">
-                    {candidateData.education[0]?.degree} in{" "}
-                    {candidateData.education[0]?.field}
+                    {educationData[0]?.degree} in{" "}
+                    {educationData[0]?.field}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {candidateData.education[0]?.institution}
+                    {educationData[0]?.institution}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2">Latest Experience</h3>
                   <p className="text-sm">
-                    {candidateData.experience[0]?.title} at{" "}
-                    {candidateData.experience[0]?.company}
+                    {experienceData[0]?.title} at{" "}
+                    {experienceData[0]?.company}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {candidateData.experience[0]?.duration}
+                    {experienceData[0]?.duration}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2">Certifications</h3>
                   <ul className="text-sm space-y-1">
-                    {candidateData.certifications.map((cert, index) => (
+                    {certifications.map((cert, index) => (
                       <li key={index}>{cert}</li>
                     ))}
                   </ul>
@@ -225,7 +226,7 @@ const CVDetails = () => {
               <CardDescription>Academic history and qualifications</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {candidateData.education.map((edu, index) => (
+              {educationData.map((edu, index) => (
                 <div key={index} className="border-b pb-4 last:border-0">
                   <div className="flex justify-between items-start">
                     <div>
@@ -249,7 +250,7 @@ const CVDetails = () => {
               <CardDescription>Professional work experience</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {candidateData.experience.map((exp, index) => (
+              {experienceData.map((exp, index) => (
                 <div key={index} className="border-b pb-4 last:border-0">
                   <div className="flex justify-between items-start">
                     <div>
@@ -277,7 +278,7 @@ const CVDetails = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Technical Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {candidateData.skills.map((skill, index) => (
+                    {skills.map((skill, index) => (
                       <Badge key={index} variant="secondary">
                         {skill}
                       </Badge>
@@ -287,7 +288,7 @@ const CVDetails = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Certifications</h3>
                   <ul className="space-y-2">
-                    {candidateData.certifications.map((cert, index) => (
+                    {certifications.map((cert, index) => (
                       <li key={index} className="flex items-center gap-2">
                         <Badge variant="outline" className="rounded-full">
                           <Calendar className="h-3 w-3 mr-1" />

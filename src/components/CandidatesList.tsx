@@ -1,18 +1,12 @@
 
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, Filter, User } from "lucide-react";
+import { FileText, Search, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
-
-type Resume = Database['public']['Tables']['resumes']['Row'] & {
-  profiles?: {
-    full_name: string | null;
-  } | null;
-};
+import { Resume } from "@/types/resume";
 
 const CandidatesList = () => {
   const [candidates, setCandidates] = useState<Resume[]>([]);
@@ -34,7 +28,14 @@ const CandidatesList = () => {
           education, 
           experience, 
           created_at,
-          profiles:user_id(full_name)
+          file_name,
+          file_path,
+          file_type,
+          user_id,
+          updated_at,
+          parsed_data,
+          certifications,
+          profiles:user_id(full_name, id)
         `)
         .order('created_at', { ascending: false });
         
@@ -42,7 +43,7 @@ const CandidatesList = () => {
       
       if (data && data.length === 0) {
         // Add dummy data if none exists
-        setCandidates([
+        const dummyData: Resume[] = [
           {
             id: "1",
             skills: ["JavaScript", "React", "Node.js"],
@@ -54,7 +55,9 @@ const CandidatesList = () => {
             file_type: "application/pdf",
             user_id: "user1",
             updated_at: new Date().toISOString(),
-            profiles: { full_name: "John Doe" }
+            certifications: ["AWS Certified Developer"],
+            parsed_data: null,
+            profiles: { full_name: "John Doe", id: "user1" }
           },
           {
             id: "2",
@@ -67,7 +70,9 @@ const CandidatesList = () => {
             file_type: "application/pdf",
             user_id: "user2",
             updated_at: new Date().toISOString(),
-            profiles: { full_name: "Jane Smith" }
+            certifications: ["Google Cloud Professional"],
+            parsed_data: null,
+            profiles: { full_name: "Jane Smith", id: "user2" }
           },
           {
             id: "3",
@@ -80,11 +85,16 @@ const CandidatesList = () => {
             file_type: "application/pdf",
             user_id: "user3",
             updated_at: new Date().toISOString(),
-            profiles: { full_name: "Mike Johnson" }
+            certifications: ["Apple Certified Developer"],
+            parsed_data: null,
+            profiles: { full_name: "Mike Johnson", id: "user3" }
           },
-        ]);
+        ];
+        setCandidates(dummyData);
       } else {
-        setCandidates(data || []);
+        // Type assertion to handle the profiles join
+        const typedData = data as unknown as Resume[];
+        setCandidates(typedData);
       }
     } catch (error) {
       console.error("Error fetching candidates:", error);
