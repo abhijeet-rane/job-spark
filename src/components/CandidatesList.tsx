@@ -7,8 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Search, Filter, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+type Resume = {
+  id: string;
+  skills: string[] | null;
+  education: any[] | null;
+  experience: any[] | null;
+  created_at: string;
+  profiles: {
+    full_name: string | null;
+  } | null;
+};
+
 const CandidatesList = () => {
-  const [candidates, setCandidates] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   

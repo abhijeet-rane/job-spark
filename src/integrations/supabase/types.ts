@@ -9,7 +9,150 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      job_postings: {
+        Row: {
+          company: string
+          created_at: string
+          description: string
+          id: string
+          skills_required: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          description: string
+          id?: string
+          skills_required?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          description?: string
+          id?: string
+          skills_required?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          match_score: number
+          resume_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          match_score?: number
+          resume_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          match_score?: number
+          resume_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      resumes: {
+        Row: {
+          certifications: string[] | null
+          created_at: string
+          education: Json | null
+          experience: Json | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          parsed_data: Json | null
+          skills: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          certifications?: string[] | null
+          created_at?: string
+          education?: Json | null
+          experience?: Json | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          parsed_data?: Json | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          certifications?: string[] | null
+          created_at?: string
+          education?: Json | null
+          experience?: Json | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          parsed_data?: Json | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

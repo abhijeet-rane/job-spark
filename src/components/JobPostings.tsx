@@ -12,8 +12,20 @@ import { supabase } from "@/integrations/supabase/client";
 import FileUpload from "./FileUpload";
 import { toast } from "sonner";
 
+// Import Tabs components
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type JobPosting = {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  skills_required: string[] | null;
+  created_at: string;
+};
+
 const JobPostings = () => {
-  const [jobPostings, setJobPostings] = useState<any[]>([]);
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewJobDialog, setShowNewJobDialog] = useState(false);
@@ -289,8 +301,5 @@ const JobPostings = () => {
     </div>
   );
 };
-
-// Import Tabs components
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default JobPostings;

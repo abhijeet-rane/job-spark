@@ -15,9 +15,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Mail, Calendar, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+type Resume = {
+  id: string;
+  file_path: string;
+  file_name: string;
+  education: any[] | null;
+  experience: any[] | null;
+  skills: string[] | null;
+  certifications: string[] | null;
+  profiles?: {
+    full_name: string | null;
+    id: string;
+  } | null;
+};
+
 const CVDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const [resume, setResume] = useState<any>(null);
+  const [resume, setResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +45,7 @@ const CVDetails = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from("resumes")
+        .from('resumes')
         .select(`
           *,
           profiles:user_id (

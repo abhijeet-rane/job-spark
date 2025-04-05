@@ -16,6 +16,31 @@ import Analytics from "@/components/Analytics";
 import JobPostings from "@/components/JobPostings";
 import JobMatches from "@/components/JobMatches";
 
+type Resume = {
+  id: string;
+  file_path: string;
+  file_name: string;
+  file_type: string;
+  education: any[] | null;
+  experience: any[] | null;
+  skills: string[] | null;
+  certifications: string[] | null;
+  created_at: string;
+  profiles?: {
+    full_name: string | null;
+  } | null;
+};
+
+type Match = {
+  id: string;
+  job: {
+    title: string;
+    company: string;
+  };
+  match_score: number;
+  status: string;
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading, signOut, isAdmin } = useAuth();
@@ -82,7 +107,7 @@ const AdminDashboard = () => {
     jobPostings: 5,
     scheduledInterviews: 3
   });
-  const [resumeList, setResumeList] = useState<any[]>([]);
+  const [resumeList, setResumeList] = useState<Resume[]>([]);
   
   useEffect(() => {
     // Fetch real data or use dummy data
@@ -286,7 +311,7 @@ const AdminDashboard = () => {
 
 const ApplicantDashboard = () => {
   const [hasCV, setHasCV] = useState(false);
-  const [matches, setMatches] = useState<any[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   
   useEffect(() => {
     checkExistingCV();
