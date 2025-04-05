@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -14,10 +15,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Mail, Calendar, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Resume, Education, Experience } from "@/types/resume";
+import { Json } from "@/integrations/supabase/types";
+
+type ResumeWithProfiles = Resume & {
+  profiles?: {
+    full_name: string | null;
+    id: string;
+  } | null;
+};
 
 const CVDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const [resume, setResume] = useState<Resume | null>(null);
+  const [resume, setResume] = useState<ResumeWithProfiles | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +54,7 @@ const CVDetails = () => {
       if (error) throw error;
       
       // Type assertion to ensure it matches our Resume type
-      setResume(data as unknown as Resume);
+      setResume(data as unknown as ResumeWithProfiles);
     } catch (err: any) {
       setError(err.message);
     } finally {

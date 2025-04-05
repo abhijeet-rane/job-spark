@@ -7,9 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Search, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Resume } from "@/types/resume";
+import { Database } from "@/integrations/supabase/types";
+
+type ResumeWithProfiles = Resume & {
+  profiles?: {
+    full_name: string | null;
+    id: string;
+  } | null;
+};
 
 const CandidatesList = () => {
-  const [candidates, setCandidates] = useState<Resume[]>([]);
+  const [candidates, setCandidates] = useState<ResumeWithProfiles[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -43,7 +51,7 @@ const CandidatesList = () => {
       
       if (data && data.length === 0) {
         // Add dummy data if none exists
-        const dummyData: Resume[] = [
+        const dummyData: ResumeWithProfiles[] = [
           {
             id: "1",
             skills: ["JavaScript", "React", "Node.js"],
@@ -93,7 +101,7 @@ const CandidatesList = () => {
         setCandidates(dummyData);
       } else {
         // Type assertion to handle the profiles join
-        const typedData = data as unknown as Resume[];
+        const typedData = data as unknown as ResumeWithProfiles[];
         setCandidates(typedData);
       }
     } catch (error) {
@@ -146,8 +154,8 @@ const CandidatesList = () => {
                       <div>
                         <h3 className="font-medium">{candidate.profiles?.full_name || "Anonymous Applicant"}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {candidate.experience?.[0]?.title || "No experience listed"}
-                          {candidate.experience?.[0]?.company ? ` at ${candidate.experience[0].company}` : ""}
+                          {Array.isArray(candidate.experience) && candidate.experience[0]?.title || "No experience listed"}
+                          {Array.isArray(candidate.experience) && candidate.experience[0]?.company ? ` at ${candidate.experience[0].company}` : ""}
                         </p>
                       </div>
                     </div>
