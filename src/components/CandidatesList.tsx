@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Search, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ResumeWithProfiles } from "@/types/resume";
+import { ResumeWithProfiles, Experience } from "@/types/resume";
 import { toast } from "sonner";
 
 const CandidatesList = () => {
@@ -36,7 +36,7 @@ const CandidatesList = () => {
           updated_at,
           parsed_data,
           certifications,
-          profiles:user_id(full_name, id)
+          profiles(full_name, id)
         `)
         .order('created_at', { ascending: false });
         
@@ -44,6 +44,8 @@ const CandidatesList = () => {
         toast.error(`Error fetching candidates: ${error.message}`);
         throw error;
       }
+      
+      console.log("Fetched candidates:", data);
       
       if (data && data.length === 0) {
         // Add dummy data if none exists
@@ -96,7 +98,6 @@ const CandidatesList = () => {
         ];
         setCandidates(dummyData);
       } else {
-        console.log("Fetched candidates:", data);
         // Type assertion to handle the profiles join
         const typedData = data as unknown as ResumeWithProfiles[];
         setCandidates(typedData);
@@ -117,6 +118,21 @@ const CandidatesList = () => {
     return name.includes(searchTerm.toLowerCase()) || 
            skills.includes(searchTerm.toLowerCase());
   });
+
+  // Helper function to safely get experience information
+  const getExperienceInfo = (candidate: ResumeWithProfiles) => {
+    if (!candidate.experience) return { title: "No title", company: "No company" };
+
+    if (Array.isArray(candidate.experience) && candidate.experience.length > 0) {
+      const exp = candidate.experience[0] as Experience;
+      return {
+        title: exp.title || "No title",
+        company: exp.company || "No company"
+      };
+    }
+
+    return { title: "No title", company: "No company" };
+  };
 
   return (
     <div className="space-y-6">
@@ -139,39 +155,42 @@ const CandidatesList = () => {
         </div>
       ) : filteredCandidates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredCandidates.map((candidate) => (
-            <Link to={`/dashboard/candidates/${candidate.id}`} key={candidate.id}>
-              <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-primary/10 p-2">
-                        <User className="h-5 w-5 text-primary" />
+          {filteredCandidates.map((candidate) => {
+            const expInfo = getExperienceInfo(candidate);
+            
+            return (
+              <Link to={`/dashboard/candidates/${candidate.id}`} key={candidate.id}>
+                <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-primary/10 p-2">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{candidate.profiles?.full_name || "Anonymous Applicant"}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {expInfo.title} {expInfo.company ? `at ${expInfo.company}` : ""}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{candidate.profiles?.full_name || "Anonymous Applicant"}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {Array.isArray(candidate.experience) && candidate.experience[0]?.title || "No experience listed"}
-                          {Array.isArray(candidate.experience) && candidate.experience[0]?.company ? ` at ${candidate.experience[0].company}` : ""}
-                        </p>
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="mt-4">
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {(candidate.skills || []).slice(0, 3).map((skill: string, i: number) => (
+                          <Badge key={i} variant="secondary">{skill}</Badge>
+                        ))}
+                        {(candidate.skills || []).length > 3 && (
+                          <Badge variant="outline">+{(candidate.skills || []).length - 3} more</Badge>
+                        )}
                       </div>
                     </div>
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {(candidate.skills || []).slice(0, 3).map((skill: string, i: number) => (
-                        <Badge key={i} variant="secondary">{skill}</Badge>
-                      ))}
-                      {(candidate.skills || []).length > 3 && (
-                        <Badge variant="outline">+{(candidate.skills || []).length - 3} more</Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12">
