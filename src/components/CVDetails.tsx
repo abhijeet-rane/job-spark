@@ -33,14 +33,13 @@ const CVDetails = () => {
   const fetchResumeDetails = async () => {
     try {
       setLoading(true);
+      console.log("Fetching resume details for ID:", id);
+      
       const { data, error } = await supabase
         .from('resumes')
         .select(`
           *,
-          profiles:user_id (
-            full_name,
-            id
-          )
+          profiles:user_id(full_name, id)
         `)
         .eq("id", id)
         .single();
@@ -54,6 +53,7 @@ const CVDetails = () => {
       // Type assertion to ensure it matches our Resume type
       setResume(data as unknown as ResumeWithProfiles);
     } catch (err: any) {
+      console.error("Error in fetchResumeDetails:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -61,14 +61,22 @@ const CVDetails = () => {
   };
 
   const downloadCV = async () => {
-    if (!resume?.file_path) return;
+    if (!resume?.file_path) {
+      toast.error("No file path available for download");
+      return;
+    }
 
     try {
+      console.log("Attempting to download file:", resume.file_path);
       const { data, error } = await supabase.storage
         .from("resumes")
         .download(resume.file_path);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Download error:", error);
+        toast.error(`Error downloading CV: ${error.message}`);
+        throw error;
+      }
 
       // Create a download link
       const url = URL.createObjectURL(data);
@@ -111,7 +119,7 @@ const CVDetails = () => {
 
   // Safely convert the education and experience fields to their proper types
   const educationData: Education[] = Array.isArray(resume.education) 
-    ? resume.education as unknown as Education[] 
+    ? resume.education as Education[] 
     : [
         {
           degree: "Bachelor of Science",
@@ -128,7 +136,7 @@ const CVDetails = () => {
       ];
 
   const experienceData: Experience[] = Array.isArray(resume.experience) 
-    ? resume.experience as unknown as Experience[] 
+    ? resume.experience as Experience[] 
     : [
         {
           title: "Software Engineer",

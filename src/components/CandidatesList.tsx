@@ -21,6 +21,8 @@ const CandidatesList = () => {
   const fetchCandidates = async () => {
     try {
       setLoading(true);
+      console.log("Fetching candidates...");
+      
       const { data, error } = await supabase
         .from('resumes')
         .select(`
@@ -36,7 +38,7 @@ const CandidatesList = () => {
           updated_at,
           parsed_data,
           certifications,
-          profiles(full_name, id)
+          profiles:user_id(full_name, id)
         `)
         .order('created_at', { ascending: false });
         

@@ -22,8 +22,8 @@ export type Resume = {
   file_path: string;
   file_type: string;
   skills: string[] | null;
-  education: Json | Education[] | null;
-  experience: Json | Experience[] | null;
+  education: Education[] | null;
+  experience: Experience[] | null;
   certifications: string[] | null;
   created_at: string;
   updated_at: string;

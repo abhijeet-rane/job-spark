@@ -73,20 +73,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
       
       // Check if bucket exists, if not create it (this would normally be done in SQL)
       try {
-        const { data: bucketData, error: bucketError } = await supabase.storage
-          .getBucket(bucketName);
-          
-        if (bucketError && bucketError.message.includes("not found")) {
-          console.log(`Bucket ${bucketName} not found, attempting to create it`);
-          const { error: createError } = await supabase.storage
-            .createBucket(bucketName, { public: true });
-            
-          if (createError) {
-            console.error(`Error creating bucket: ${createError.message}`);
-          }
-        }
+        await ensureBucketExists(bucketName);
       } catch (bucketCheckError) {
-        console.error("Error checking bucket:", bucketCheckError);
+        console.error("Error checking/creating bucket:", bucketCheckError);
       }
 
       // Upload file to Supabase Storage
@@ -120,6 +109,29 @@ const FileUpload: React.FC<FileUploadProps> = ({
       toast.error(`Upload failed: ${error.message}`);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const ensureBucketExists = async (bucketName: string) => {
+    try {
+      const { data: bucketData, error: bucketError } = await supabase.storage
+        .getBucket(bucketName);
+        
+      if (bucketError && bucketError.message.includes("not found")) {
+        console.log(`Bucket ${bucketName} not found, attempting to create it`);
+        const { error: createError } = await supabase.storage
+          .createBucket(bucketName, { public: true });
+          
+        if (createError) {
+          console.error(`Error creating bucket: ${createError.message}`);
+          throw createError;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error ensuring bucket exists:", error);
+      throw error;
     }
   };
 

@@ -1,256 +1,394 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Calendar, CheckCircle, Clock, X, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { ResumeWithProfiles } from "@/types/resume";
+import { toast } from "sonner";
+
+type JobMatch = {
+  id: string;
+  job_id: string;
+  resume_id: string;
+  match_score: number;
+  status: string;
+  created_at: string;
+  job: {
+    title: string;
+    company: string;
+    description: string;
+    skills_required: string[];
+  };
+  resume?: ResumeWithProfiles;
+};
 
 const JobMatches = () => {
-  const [matches, setMatches] = useState<any[]>([]);
+  const { user, isAdmin } = useAuth();
+  const [matches, setMatches] = useState<JobMatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
-  
+  const [activeTab, setActiveTab] = useState("all");
+
   useEffect(() => {
-    fetchMatches();
-  }, []);
-  
+    if (user) {
+      fetchMatches();
+    }
+  }, [user]);
+
   const fetchMatches = async () => {
     try {
-      // In a real implementation, you would fetch from the database
-      // For now, use dummy data
-      const dummyMatches = [
-        {
-          id: "1",
-          job: {
-            id: "101",
-            title: "Frontend Developer",
-            company: "TechCorp",
-            description: "Developing user interfaces for web applications",
-            skills_required: ["React", "TypeScript", "CSS", "HTML"]
-          },
-          candidate: {
-            id: "201",
-            name: "John Smith",
-            skills: ["React", "JavaScript", "CSS", "Redux"]
-          },
-          match_score: 85,
-          status: "pending",
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "2",
-          job: {
-            id: "102",
-            title: "Backend Engineer",
-            company: "DataSys Inc",
-            description: "Building APIs and database integrations",
-            skills_required: ["Node.js", "Express", "MongoDB", "TypeScript"]
-          },
-          candidate: {
-            id: "202",
-            name: "Jane Doe",
-            skills: ["Node.js", "Express", "PostgreSQL", "Python"]
-          },
-          match_score: 78,
-          status: "interview_scheduled",
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "3",
-          job: {
-            id: "103",
-            title: "Full Stack Developer",
-            company: "WebSolutions",
-            description: "Developing both frontend and backend components",
-            skills_required: ["React", "Node.js", "MongoDB", "Redux"]
-          },
-          candidate: {
-            id: "203",
-            name: "Alex Johnson",
-            skills: ["React", "Node.js", "Express", "MongoDB"]
-          },
-          match_score: 92,
-          status: "hired",
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "4",
-          job: {
-            id: "104",
-            title: "DevOps Engineer",
-            company: "CloudTech",
-            description: "Managing cloud infrastructure and CI/CD pipelines",
-            skills_required: ["AWS", "Docker", "Kubernetes", "Terraform"]
-          },
-          candidate: {
-            id: "204",
-            name: "Michael Brown",
-            skills: ["AWS", "Docker", "Jenkins", "Ansible"]
-          },
-          match_score: 70,
-          status: "rejected",
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "5",
-          job: {
-            id: "105",
-            title: "UI/UX Designer",
-            company: "DesignHub",
-            description: "Creating user interfaces and experiences for web and mobile applications",
-            skills_required: ["Figma", "User Research", "Wireframing", "Adobe XD"]
-          },
-          candidate: {
-            id: "205",
-            name: "Emily Wilson",
-            skills: ["Figma", "Sketch", "Adobe XD", "Prototyping"]
-          },
-          match_score: 88,
-          status: "pending",
-          created_at: new Date().toISOString()
-        }
-      ];
+      setLoading(true);
       
-      setMatches(dummyMatches);
+      let query;
+      
+      if (isAdmin) {
+        // Admin sees all matches
+        query = supabase
+          .from('matches')
+          .select(`
+            *,
+            job:job_id(title, company, description, skills_required),
+            resume:resume_id(
+              id,
+              user_id,
+              skills,
+              profiles:user_id(full_name)
+            )
+          `)
+          .order('match_score', { ascending: false });
+      } else {
+        // Regular users see only their matches
+        const { data: userResumes, error: resumeError } = await supabase
+          .from('resumes')
+          .select('id')
+          .eq('user_id', user.id);
+          
+        if (resumeError) throw resumeError;
+        
+        if (!userResumes || userResumes.length === 0) {
+          setMatches([]);
+          setLoading(false);
+          return;
+        }
+        
+        const resumeIds = userResumes.map(resume => resume.id);
+        
+        query = supabase
+          .from('matches')
+          .select(`
+            *,
+            job:job_id(title, company, description, skills_required)
+          `)
+          .in('resume_id', resumeIds)
+          .order('match_score', { ascending: false });
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        console.log("Matches fetched:", data);
+        setMatches(data as JobMatch[]);
+      } else {
+        // Generate dummy data if no matches found
+        const dummyMatches: JobMatch[] = [
+          {
+            id: "1",
+            job_id: "1",
+            resume_id: "1",
+            match_score: 85,
+            status: "pending",
+            created_at: new Date().toISOString(),
+            job: {
+              title: "Frontend Developer",
+              company: "TechCorp",
+              description: "We're looking for a skilled frontend developer...",
+              skills_required: ["React", "TypeScript", "CSS"]
+            },
+            resume: {
+              id: "1",
+              user_id: "user-1",
+              skills: ["React", "JavaScript", "HTML", "CSS"],
+              profiles: { full_name: "John Doe", id: "user-1" }
+            } as ResumeWithProfiles
+          },
+          {
+            id: "2",
+            job_id: "2",
+            resume_id: "1",
+            match_score: 72,
+            status: "pending",
+            created_at: new Date().toISOString(),
+            job: {
+              title: "Full Stack Developer",
+              company: "Innovative Solutions",
+              description: "Looking for a versatile developer...",
+              skills_required: ["React", "Node.js", "MongoDB"]
+            },
+            resume: {
+              id: "1",
+              user_id: "user-1",
+              skills: ["React", "JavaScript", "HTML", "CSS"],
+              profiles: { full_name: "John Doe", id: "user-1" }
+            } as ResumeWithProfiles
+          }
+        ];
+        
+        setMatches(dummyMatches);
+      }
     } catch (error) {
       console.error("Error fetching matches:", error);
+      toast.error("Failed to load job matches");
     } finally {
       setLoading(false);
     }
   };
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="outline" className="flex gap-1 items-center"><Clock className="h-3 w-3" /> Pending</Badge>;
-      case "interview_scheduled":
-        return <Badge variant="secondary" className="flex gap-1 items-center"><Calendar className="h-3 w-3" /> Interview Scheduled</Badge>;
-      case "hired":
-        return <Badge variant="default" className="bg-green-500 flex gap-1 items-center"><CheckCircle className="h-3 w-3" /> Hired</Badge>;
-      case "rejected":
-        return <Badge variant="destructive" className="flex gap-1 items-center"><X className="h-3 w-3" /> Rejected</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+
+  const updateMatchStatus = async (matchId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update({ status: newStatus })
+        .eq('id', matchId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setMatches(prevMatches => 
+        prevMatches.map(match => 
+          match.id === matchId ? { ...match, status: newStatus } : match
+        )
+      );
+      
+      toast.success(`Match ${newStatus === 'accepted' ? 'accepted' : 'rejected'}`);
+    } catch (error) {
+      console.error("Error updating match status:", error);
+      toast.error("Failed to update match status");
     }
   };
-  
+
   const filteredMatches = matches.filter(match => {
-    if (filter === "all") return true;
-    return match.status === filter;
+    if (activeTab === 'all') return true;
+    if (activeTab === 'accepted') return match.status === 'accepted';
+    if (activeTab === 'rejected') return match.status === 'rejected';
+    return match.status === 'pending';
   });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Job Matches</h1>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter:</span>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={filter === "all" ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setFilter("all")}
-            >
-              All
-            </Button>
-            <Button 
-              variant={filter === "pending" ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setFilter("pending")}
-            >
-              Pending
-            </Button>
-            <Button 
-              variant={filter === "interview_scheduled" ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setFilter("interview_scheduled")}
-            >
-              Interviews
-            </Button>
-            <Button 
-              variant={filter === "hired" ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setFilter("hired")}
-            >
-              Hired
-            </Button>
+      </div>
+
+      <Tabs defaultValue="all" onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="all">All Matches</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="accepted">Accepted</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-jobspark-primary"></div>
+            </div>
+          ) : filteredMatches.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredMatches.map((match) => (
+                <MatchCard 
+                  key={match.id} 
+                  match={match} 
+                  updateStatus={updateMatchStatus}
+                  isAdmin={isAdmin} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No matches found</h3>
+              <p className="mt-2 text-muted-foreground">
+                No job matches currently available
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        
+        <TabsContent value="pending" className="space-y-4">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-jobspark-primary"></div>
+            </div>
+          ) : filteredMatches.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredMatches.map((match) => (
+                <MatchCard 
+                  key={match.id} 
+                  match={match} 
+                  updateStatus={updateMatchStatus}
+                  isAdmin={isAdmin} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No pending matches</h3>
+              <p className="mt-2 text-muted-foreground">
+                There are currently no pending job matches
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="accepted" className="space-y-4">
+          
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-jobspark-primary"></div>
+            </div>
+          ) : filteredMatches.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredMatches.map((match) => (
+                <MatchCard 
+                  key={match.id} 
+                  match={match} 
+                  updateStatus={updateMatchStatus}
+                  isAdmin={isAdmin} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No accepted matches</h3>
+              <p className="mt-2 text-muted-foreground">
+                You haven't accepted any job matches yet
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="rejected" className="space-y-4">
+          
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-jobspark-primary"></div>
+            </div>
+          ) : filteredMatches.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredMatches.map((match) => (
+                <MatchCard 
+                  key={match.id} 
+                  match={match} 
+                  updateStatus={updateMatchStatus}
+                  isAdmin={isAdmin} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No rejected matches</h3>
+              <p className="mt-2 text-muted-foreground">
+                You haven't rejected any job matches
+              </p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+interface MatchCardProps {
+  match: JobMatch;
+  updateStatus: (matchId: string, status: string) => Promise<void>;
+  isAdmin: boolean;
+}
+
+const MatchCard: React.FC<MatchCardProps> = ({ match, updateStatus, isAdmin }) => {
+  const getStatusBadge = () => {
+    switch (match.status) {
+      case 'accepted':
+        return <Badge className="bg-green-500">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">Pending</Badge>;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>{match.job.title}</CardTitle>
+            <CardDescription>{match.job.company}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-jobspark-primary">{match.match_score}% Match</Badge>
+            {getStatusBadge()}
           </div>
         </div>
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-jobspark-primary"></div>
-        </div>
-      ) : filteredMatches.length > 0 ? (
+      </CardHeader>
+      <CardContent className="pb-4">
         <div className="space-y-4">
-          {filteredMatches.map((match) => (
-            <Card key={match.id} className="hover:bg-muted/10 transition-colors">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row justify-between gap-4">
-                  <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                    {/* Job Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-primary/10 p-2">
-                          <Briefcase className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{match.job.title}</h3>
-                          <p className="text-sm text-muted-foreground">{match.job.company}</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 ml-12">
-                        <p className="text-sm line-clamp-2">{match.job.description}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {match.job.skills_required.map((skill: string, i: number) => (
-                            <Badge key={i} variant="secondary" className="text-xs">{skill}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Candidate Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-jobspark-accent/10 p-2">
-                          <Filter className="h-5 w-5 text-jobspark-accent" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{match.candidate.name}</h3>
-                          <p className="text-sm text-muted-foreground">{match.match_score}% match</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 ml-12">
-                        <div className="flex flex-wrap gap-1">
-                          {match.candidate.skills.map((skill: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs">{skill}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-between gap-2">
-                    {getStatusBadge(match.status)}
-                    <Button size="sm">View Details</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <div>
+            <h4 className="text-sm font-medium mb-1">Job Description</h4>
+            <p className="text-sm text-muted-foreground">{match.job.description.substring(0, 150)}...</p>
+          </div>
+          
+          <div>
+            <h4 className="text-sm font-medium mb-1">Required Skills</h4>
+            <div className="flex flex-wrap gap-2">
+              {match.job.skills_required.map((skill, i) => (
+                <Badge key={i} variant="secondary">{skill}</Badge>
+              ))}
+            </div>
+          </div>
+          
+          {isAdmin && match.resume && (
+            <div>
+              <h4 className="text-sm font-medium mb-1">Candidate</h4>
+              <p className="text-sm">{match.resume.profiles?.full_name || "Anonymous"}</p>
+              
+              <h4 className="text-sm font-medium mt-2 mb-1">Candidate Skills</h4>
+              <div className="flex flex-wrap gap-2">
+                {(match.resume.skills || []).map((skill, i) => (
+                  <Badge key={i} variant={
+                    match.job.skills_required.includes(skill) ? "default" : "outline"
+                  }>{skill}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {match.status === 'pending' && (
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button 
+                variant="outline"
+                onClick={() => updateStatus(match.id, 'rejected')}
+              >
+                Reject
+              </Button>
+              <Button 
+                className="bg-jobspark-primary hover:bg-opacity-90"
+                onClick={() => updateStatus(match.id, 'accepted')}
+              >
+                Accept
+              </Button>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium">No matches found</h3>
-          <p className="mt-2 text-muted-foreground">
-            {filter !== "all" ? "Try changing your filter" : "Upload more CVs or job descriptions to generate matches"}
-          </p>
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
