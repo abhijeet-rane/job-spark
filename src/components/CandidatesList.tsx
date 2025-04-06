@@ -6,15 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Search, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Resume } from "@/types/resume";
-import { Database } from "@/integrations/supabase/types";
-
-type ResumeWithProfiles = Resume & {
-  profiles?: {
-    full_name: string | null;
-    id: string;
-  } | null;
-};
+import { ResumeWithProfiles } from "@/types/resume";
+import { toast } from "sonner";
 
 const CandidatesList = () => {
   const [candidates, setCandidates] = useState<ResumeWithProfiles[]>([]);
@@ -47,7 +40,10 @@ const CandidatesList = () => {
         `)
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        toast.error(`Error fetching candidates: ${error.message}`);
+        throw error;
+      }
       
       if (data && data.length === 0) {
         // Add dummy data if none exists
@@ -55,8 +51,8 @@ const CandidatesList = () => {
           {
             id: "1",
             skills: ["JavaScript", "React", "Node.js"],
-            education: [{ degree: "Bachelor's", field: "Computer Science", institution: "MIT" }],
-            experience: [{ title: "Software Engineer", company: "Google" }],
+            education: [{ degree: "Bachelor's", field: "Computer Science", institution: "MIT", year: "2020" }],
+            experience: [{ title: "Software Engineer", company: "Google", duration: "2020-Present", description: "Full stack development" }],
             created_at: new Date().toISOString(),
             file_name: "resume.pdf",
             file_path: "path/to/file",
@@ -70,8 +66,8 @@ const CandidatesList = () => {
           {
             id: "2",
             skills: ["Python", "Django", "SQL"],
-            education: [{ degree: "Master's", field: "Data Science", institution: "Stanford" }],
-            experience: [{ title: "Data Scientist", company: "Amazon" }],
+            education: [{ degree: "Master's", field: "Data Science", institution: "Stanford", year: "2021" }],
+            experience: [{ title: "Data Scientist", company: "Amazon", duration: "2021-Present", description: "Machine learning models" }],
             created_at: new Date().toISOString(),
             file_name: "resume2.pdf",
             file_path: "path/to/file2",
@@ -85,8 +81,8 @@ const CandidatesList = () => {
           {
             id: "3",
             skills: ["Swift", "iOS", "Objective-C"],
-            education: [{ degree: "Bachelor's", field: "Mobile Development", institution: "Berkeley" }],
-            experience: [{ title: "iOS Developer", company: "Apple" }],
+            education: [{ degree: "Bachelor's", field: "Mobile Development", institution: "Berkeley", year: "2019" }],
+            experience: [{ title: "iOS Developer", company: "Apple", duration: "2019-Present", description: "iOS application development" }],
             created_at: new Date().toISOString(),
             file_name: "resume3.pdf",
             file_path: "path/to/file3",
@@ -100,6 +96,7 @@ const CandidatesList = () => {
         ];
         setCandidates(dummyData);
       } else {
+        console.log("Fetched candidates:", data);
         // Type assertion to handle the profiles join
         const typedData = data as unknown as ResumeWithProfiles[];
         setCandidates(typedData);

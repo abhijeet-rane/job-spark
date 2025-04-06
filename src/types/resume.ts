@@ -1,35 +1,38 @@
 
 import { Json } from "@/integrations/supabase/types";
 
-export interface Education {
+export type Education = {
   degree: string;
   field: string;
   institution: string;
-  year?: string;
-}
+  year: string;
+};
 
-export interface Experience {
+export type Experience = {
   title: string;
   company: string;
-  duration?: string;
-  description?: string;
-}
+  duration: string;
+  description: string;
+};
 
-export interface Resume {
+export type Resume = {
   id: string;
-  skills: string[] | null;
-  education: Education[] | null;
-  experience: Experience[] | null;
-  created_at: string;
+  user_id: string;
   file_name: string;
   file_path: string;
   file_type: string;
-  user_id: string;
-  updated_at: string;
-  parsed_data?: Json | null;
+  skills: string[] | null;
+  education: Json | Education[] | null;
+  experience: Json | Experience[] | null;
   certifications: string[] | null;
+  created_at: string;
+  updated_at: string;
+  parsed_data: Json | null;
+};
+
+export type ResumeWithProfiles = Resume & {
   profiles?: {
     full_name: string | null;
     id: string;
   } | null;
-}
+};

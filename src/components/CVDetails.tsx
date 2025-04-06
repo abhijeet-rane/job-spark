@@ -14,15 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Mail, Calendar, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Resume, Education, Experience } from "@/types/resume";
+import { Education, Experience, ResumeWithProfiles } from "@/types/resume";
 import { Json } from "@/integrations/supabase/types";
-
-type ResumeWithProfiles = Resume & {
-  profiles?: {
-    full_name: string | null;
-    id: string;
-  } | null;
-};
+import { toast } from "sonner";
 
 const CVDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,8 +45,12 @@ const CVDetails = () => {
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        toast.error(`Error fetching CV details: ${error.message}`);
+        throw error;
+      }
       
+      console.log("Fetched resume data:", data);
       // Type assertion to ensure it matches our Resume type
       setResume(data as unknown as ResumeWithProfiles);
     } catch (err: any) {
@@ -81,8 +79,11 @@ const CVDetails = () => {
       a.click();
       URL.revokeObjectURL(url);
       a.remove();
+      
+      toast.success("CV downloaded successfully");
     } catch (err: any) {
       console.error("Error downloading CV:", err);
+      toast.error(`Error downloading CV: ${err.message}`);
     }
   };
 

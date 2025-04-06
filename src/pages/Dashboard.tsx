@@ -26,6 +26,12 @@ type Match = {
   status: string;
 };
 
+type ResumeWithProfiles = Resume & {
+  profiles: {
+    full_name: string;
+  };
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading, signOut, isAdmin } = useAuth();
@@ -92,7 +98,7 @@ const AdminDashboard = () => {
     jobPostings: 5,
     scheduledInterviews: 3
   });
-  const [resumeList, setResumeList] = useState<Resume[]>([]);
+  const [resumeList, setResumeList] = useState<ResumeWithProfiles[]>([]);
   
   useEffect(() => {
     fetchResumes();
@@ -100,6 +106,7 @@ const AdminDashboard = () => {
   
   const fetchResumes = async () => {
     try {
+      console.log("Fetching resumes for admin dashboard");
       const { data, error } = await supabase
         .from('resumes')
         .select(`
@@ -118,12 +125,24 @@ const AdminDashboard = () => {
           profiles:user_id(full_name)
         `);
         
-      if (error) throw error;
+      if (error) {
+        toast.error(`Error fetching resumes: ${error.message}`);
+        throw error;
+      }
       
-      const typedData = data as unknown as Resume[];
+      console.log("Fetched resumes:", data);
+      const typedData = data as unknown as ResumeWithProfiles[];
       setResumeList(typedData || []);
-    } catch (error) {
+      
+      if (data) {
+        setStats(prev => ({
+          ...prev,
+          applicants: data.length
+        }));
+      }
+    } catch (error: any) {
       console.error("Error fetching resumes:", error);
+      toast.error(`Failed to fetch resumes: ${error.message}`);
     }
   };
   
@@ -141,6 +160,17 @@ const AdminDashboard = () => {
         
       if (error) throw error;
       toast.success("Job description processed and added!");
+      
+      const { count } = await supabase
+        .from('job_postings')
+        .select('*', { count: 'exact', head: true });
+        
+      if (count !== null) {
+        setStats(prev => ({
+          ...prev,
+          jobPostings: count
+        }));
+      }
     } catch (error: any) {
       toast.error(`Failed to process job description: ${error.message}`);
     }
@@ -228,8 +258,8 @@ const AdminDashboard = () => {
                                 {resume.profiles?.full_name || "Unnamed Candidate"}
                               </h3>
                               <p className="text-sm text-muted-foreground">
-                                {resume.skills && resume.skills.slice(0, 3).join(", ")}
-                                {resume.skills && resume.skills.length > 3 ? "..." : ""}
+                                {resume.skills && Array.isArray(resume.skills) ? resume.skills.slice(0, 3).join(", ") : ""}
+                                {resume.skills && Array.isArray(resume.skills) && resume.skills.length > 3 ? "..." : ""}
                               </p>
                             </div>
                             <FileText className="h-5 w-5 text-muted-foreground" />
@@ -309,15 +339,28 @@ const ApplicantDashboard = () => {
   
   const checkExistingCV = async () => {
     try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) {
+        console.log("User not authenticated");
+        return;
+      }
+      
       const { data: resumes, error } = await supabase
         .from('resumes')
         .select('id')
-        .eq('user_id', (await supabase.auth.getUser()).data.user!.id)
+        .eq('user_id', userId)
         .limit(1);
         
+      if (error) {
+        toast.error(`Error checking CV: ${error.message}`);
+        throw error;
+      }
+      
       setHasCV(resumes && resumes.length > 0);
-    } catch (error) {
+      console.log("User has CV:", resumes && resumes.length > 0);
+    } catch (error: any) {
       console.error("Error checking CV:", error);
+      toast.error(`Failed to check CV: ${error.message}`);
     }
   };
   
@@ -337,17 +380,26 @@ const ApplicantDashboard = () => {
           status: "pending"
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching matches:", error);
+      toast.error(`Failed to fetch matches: ${error.message}`);
     }
   };
   
   const handleFileUpload = async (filePath: string, fileData: any) => {
     try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) {
+        toast.error("User not authenticated");
+        return;
+      }
+      
+      console.log(`Uploading CV: ${fileData.name} at path ${filePath}`);
+      
       const { data, error } = await supabase
         .from('resumes')
         .insert({
-          user_id: (await supabase.auth.getUser()).data.user!.id,
+          user_id: userId,
           file_path: filePath,
           file_name: fileData.name,
           file_type: fileData.type,
@@ -362,10 +414,20 @@ const ApplicantDashboard = () => {
           certifications: ["AWS Certified Developer", "Google Cloud Professional"]
         });
         
-      if (error) throw error;
+      if (error) {
+        toast.error(`CV upload failed: ${error.message}`);
+        throw error;
+      }
+      
       setHasCV(true);
       toast.success("CV processed and analyzed!");
+      
+      setTimeout(() => {
+        toast.success("CV matching complete! View your job matches.");
+        fetchMatches();
+      }, 1500);
     } catch (error: any) {
+      console.error("Error processing CV:", error);
       toast.error(`Failed to process CV: ${error.message}`);
     }
   };

@@ -48,27 +48,61 @@ const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   const uploadFile = async () => {
-    if (!file) return;
+    if (!file) {
+      toast.error("No file selected");
+      return;
+    }
 
     setIsUploading(true);
     try {
-      // Create a unique file path
-      const userId = (await supabase.auth.getUser()).data.user?.id;
-      if (!userId) {
-        throw new Error("User not authenticated");
+      // Check if user is authenticated
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error("User not authenticated. Please log in to upload files.");
       }
       
+      const userId = userData.user.id;
+      
+      // Create a unique file path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const timestamp = new Date().getTime();
+      const fileName = `${timestamp}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
+
+      console.log(`Uploading file to ${bucketName}/${filePath}`);
+      
+      // Check if bucket exists, if not create it (this would normally be done in SQL)
+      try {
+        const { data: bucketData, error: bucketError } = await supabase.storage
+          .getBucket(bucketName);
+          
+        if (bucketError && bucketError.message.includes("not found")) {
+          console.log(`Bucket ${bucketName} not found, attempting to create it`);
+          const { error: createError } = await supabase.storage
+            .createBucket(bucketName, { public: true });
+            
+          if (createError) {
+            console.error(`Error creating bucket: ${createError.message}`);
+          }
+        }
+      } catch (bucketCheckError) {
+        console.error("Error checking bucket:", bucketCheckError);
+      }
 
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Upload error:", error);
+        throw error;
+      }
 
+      console.log("Upload successful:", data);
       toast.success("File uploaded successfully!");
       
       if (onUploadComplete) {
@@ -82,6 +116,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       
       setFile(null);
     } catch (error: any) {
+      console.error("Upload error details:", error);
       toast.error(`Upload failed: ${error.message}`);
     } finally {
       setIsUploading(false);
