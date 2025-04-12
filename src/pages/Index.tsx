@@ -168,17 +168,17 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <TestimonialCard 
               quote="JobSpark has revolutionized our hiring process. We've reduced our time-to-hire by 40%."
-              author="Sarah Johnson"
+              author="Om Kolte"
               title="HR Director"
             />
             <TestimonialCard 
               quote="As a job seeker, JobSpark helped me find opportunities that truly match my skills and experience."
-              author="Michael Chen"
+              author="Vivek Kinage"
               title="Software Engineer"
             />
             <TestimonialCard 
               quote="The AI-powered matching has significantly improved the quality of candidates we interview."
-              author="Alex Rodriguez"
+              author="Parth Chaudhari"
               title="Recruitment Manager"
             />
           </div>
