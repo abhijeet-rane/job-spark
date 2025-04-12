@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# 💼 JobSpark: Intelligent JD Summarization & Candidate Matching
 
-## Project info
+## 🎯 Objective
 
-**URL**: https://lovable.dev/projects/0c84e469-be31-4852-9385-616a95b96d63
+**JobSpark** is an AI-powered web application designed to automate and enhance the job screening process. It aims to:
 
-## How can I edit this code?
+1. ✅ Read and summarize Job Descriptions (JDs)
+2. 📄 Extract structured data from candidate CVs
+3. 🧠 Match candidates to job requirements using an intelligent scoring system
+4. 📋 Shortlist top candidates based on a configurable threshold (e.g., 80%)
+5. 🕒 Schedule interviews and send personalized invitations via email
+6. 🧾 Use SQLite for persistent long-term memory and audit logging
+7. 🔐 Offer secure login/register functionality with role-based access control for applicants and admins
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🔗 Prototype
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0c84e469-be31-4852-9385-616a95b96d63) and start prompting.
+👉 **[Click here to view the prototype](https://job-spark.vercel.app/)**  
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🧑‍💻 Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🖥️ Frontend
+- **React.js** (with Vite or CRA)
+- **Tailwind CSS** - Utility-first styling
+- **Framer Motion** - Smooth animations
+- **shadcn/ui** or **Chakra UI** - Pre-built components
+- **React Router**, **HeroIcons**, **EmailJS**
+- **Chart.js** / **Recharts** - For visualizing match scores
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🔧 Backend
+- **FastAPI** or **Flask** - Python-based API server
+- **LangChain** + **OpenAI GPT-4 / Claude**
+- **Sentence-BERT**, **spaCy**, **PyMuPDF**, **docx2txt**
+- **SQLite** + **SQLAlchemy ORM** - Persistent storage
+- **RESTful APIs** - Frontend-backend communication
 
-Follow these steps:
+### 🚀 Deployment
+- **Frontend:** Vercel
+- **Database:** SQLite (locally hosted with persistent memory)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🤖 AI Agents & Their Responsibilities
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 1. 📄 JD Summarizer Agent
+- **Input:** Raw JD (PDF, DOCX, or plain text)
+- **Output:** Structured summary — title, skills, experience, qualifications, role
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### 2. 🧾 CV Parser Agent
+- **Input:** Raw CV (PDF, DOCX)
+- **Output:** Extracted fields: Name, Email, Education, Skills, Experience, Certifications
 
-**Edit a file directly in GitHub**
+### 3. ⚖️ Matching Agent
+- **Logic:** Sentence similarity (Sentence-BERT) + keyword intersection
+- **Output:** Match score (0–100) with breakdown by category
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 4. 🏆 Shortlisting Agent
+- **Filters** candidates based on threshold (e.g., ≥80%)
+- **Triggers** interview scheduler + stores in SQLite
 
-**Use GitHub Codespaces**
+### 5. 📅 Interview Scheduler Agent
+- **Picks** available slots
+- **Sends** personalized emails with time, format, calendar invite
+- **Uses** OpenAI for human-like email content
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 6. 💾 Memory Agent
+- **Logs** all parsed, matched, scheduled data into SQLite
+- **Ensures** persistent, queryable memory for audits or re-runs
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## ✅ Expected Deliverables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/0c84e469-be31-4852-9385-616a95b96d63) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- 🔹 Fully responsive, production-ready frontend
+- 🔹 Modular, well-documented backend APIs
+- 🔹 AI-powered multi-agent pipeline with memory and logging
+- 🔹 SQLite integration for long-term data persistence
+- 🔹 Secure login/register with role-based access control
+- 🔹 End-to-end hosted demo showcasing complete functionality
